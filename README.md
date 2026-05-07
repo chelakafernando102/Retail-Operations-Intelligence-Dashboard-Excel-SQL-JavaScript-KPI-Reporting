@@ -1,4 +1,4 @@
-# Auhtor
+# Author
 M. Sachin Chelaka Fernando
 
 # Contact
