@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Retail Operations Intelligence Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --bg:#0b1020; --card:#131a2e; --muted:#8ea0c4; --text:#f7f9ff; --accent:#6ee7b7; --line:#26324f;
+    }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter, Arial, sans-serif; background:linear-gradient(135deg,#090d1a,#121a32); color:var(--text); }
+    header { padding:42px 7vw 22px; }
+    .eyebrow { color:var(--accent); text-transform:uppercase; letter-spacing:.14em; font-size:12px; font-weight:700; }
+    h1 { margin:12px 0 8px; font-size:clamp(32px,5vw,58px); line-height:1.02; }
+    .subtitle { max-width:900px; color:var(--muted); font-size:18px; line-height:1.6; }
+    main { padding:20px 7vw 56px; }
+    .grid { display:grid; gap:18px; }
+    .kpis { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .two { grid-template-columns:1.3fr .7fr; margin-top:18px; }
+    .card { background:rgba(19,26,46,.88); border:1px solid var(--line); border-radius:22px; padding:22px; box-shadow:0 16px 45px rgba(0,0,0,.22); }
+    .kpi-label { color:var(--muted); font-size:13px; }
+    .kpi-value { margin-top:8px; font-size:28px; font-weight:800; }
+    h2 { margin:0 0 15px; font-size:21px; }
+    canvas { width:100%; max-height:360px; }
+    .insight { border-left:3px solid var(--accent); padding:10px 0 10px 13px; color:#dce6ff; margin:10px 0; line-height:1.45; }
+    .footer { color:var(--muted); margin-top:26px; line-height:1.6; font-size:14px; }
+    a { color:var(--accent); }
+    @media(max-width:900px) { .kpis,.two { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="eyebrow">Portfolio Analytics Project</div>
+    <h1>Retail Operations Intelligence Dashboard</h1>
+    <p class="subtitle">A business analyst-style dashboard built to monitor retail sales performance, profit margin, stockout risk, fulfillment efficiency, and operational bottlenecks using a simulated retail operations dataset.</p>
+  </header>
+  <main>
+    <section class="grid kpis">
+      <div class="card"><div class="kpi-label">Total Sales</div><div class="kpi-value" id="sales"></div></div>
+      <div class="card"><div class="kpi-label">Total Profit</div><div class="kpi-value" id="profit"></div></div>
+      <div class="card"><div class="kpi-label">Profit Margin</div><div class="kpi-value" id="margin"></div></div>
+      <div class="card"><div class="kpi-label">Stockout Risk Rate</div><div class="kpi-value" id="stockout"></div></div>
+    </section>
+
+    <section class="grid two">
+      <div class="card">
+        <h2>Monthly Sales & Profit Trend</h2>
+        <canvas id="monthlyChart"></canvas>
+      </div>
+      <div class="card">
+        <h2>Operational KPIs</h2>
+        <div class="insight"><strong id="orders"></strong> orders analyzed across five Canadian regions.</div>
+        <div class="insight"><strong id="units"></strong> units sold in the sample dataset.</div>
+        <div class="insight"><strong id="processing"></strong> average processing hours per order.</div>
+        <div class="insight"><strong id="risk"></strong> records flagged below reorder point.</div>
+      </div>
+    </section>
+
+    <section class="grid two">
+      <div class="card">
+        <h2>Sales by Product Category</h2>
+        <canvas id="categoryChart"></canvas>
+      </div>
+      <div class="card">
+        <h2>Regional Revenue Mix</h2>
+        <canvas id="regionChart"></canvas>
+      </div>
+    </section>
+
+    <section class="card" style="margin-top:18px;">
+      <h2>Analyst Insights</h2>
+      <div id="insights"></div>
+    </section>
+
+    <p class="footer">Built by Chelaka Fernando as a portfolio project for business analyst, operations analyst, and financial operations analyst roles. Dataset is simulated for portfolio demonstration and can be replaced with Tableau/Kaggle Superstore data for further analysis.</p>
+  </main>
+
+<script>
+const data = {"kpis": {"sales": 304194.61, "profit": 48911.48, "orders": 1500, "units": 5363, "profit_margin": 16.1, "stockout_rate": 10.5, "avg_processing_hours": 5.8, "inventory_risk_items": 266}, "monthlyLabels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], "monthlySales": [24884.89, 26824.67, 28139.73, 26350.56, 25634.11, 31113.01, 21819.6, 25123.71, 25360.99, 22038.15, 24281.27, 22623.92], "monthlyProfit": [3838.4, 4052.71, 4555.23, 4280.17, 4032.34, 4931.45, 3876.59, 4347.18, 3922.21, 3563.19, 3865.34, 3646.67], "categoryLabels": ["Electronics", "Home", "Seasonal", "Office Supplies", "Apparel", "Health & Beauty", "Grocery"], "categorySales": [120385.14, 48792.71, 40076.78, 30348.13, 28374.84, 20825.65, 15391.36], "categoryProfit": [10849.79, 9371.84, 6591.28, 6638.07, 7254.09, 6132.88, 2073.53], "regionLabels": ["BC", "Ontario", "Prairies", "Quebec", "Atlantic"], "regionSales": [64072.33, 62182.64, 61581.76, 59615.0, 56742.88], "regionProfit": [10360.71, 9083.29, 10291.85, 9819.99, 9355.64], "insights": ["Electronics generated the highest sales volume but produced a lower margin profile than Apparel and Health & Beauty.", "Stockout risk was concentrated in low-inventory orders where processing time increased by roughly 2\u20133 hours on average.", "Atlantic and Ontario represented the strongest revenue regions in the sample dataset.", "Discounting above 15% reduced profit margin materially, suggesting tighter promotion controls could improve profitability.", "Pickup and Same Day fulfillment showed faster processing times but should be monitored for inventory accuracy."]};
+
+const money = n => '$' + n.toLocaleString(undefined, {maximumFractionDigits:0});
+document.getElementById('sales').textContent = money(data.kpis.sales);
+document.getElementById('profit').textContent = money(data.kpis.profit);
+document.getElementById('margin').textContent = data.kpis.profit_margin + '%';
+document.getElementById('stockout').textContent = data.kpis.stockout_rate + '%';
+document.getElementById('orders').textContent = data.kpis.orders.toLocaleString();
+document.getElementById('units').textContent = data.kpis.units.toLocaleString();
+document.getElementById('processing').textContent = data.kpis.avg_processing_hours + ' hrs';
+document.getElementById('risk').textContent = data.kpis.inventory_risk_items.toLocaleString();
+
+document.getElementById('insights').innerHTML = data.insights.map(x => `<div class="insight">${x}</div>`).join('');
+
+const chartOptions = {
+  responsive:true,
+  plugins: { legend: { labels: { color:'#dce6ff' } } },
+  scales: {
+    x: { ticks: { color:'#8ea0c4' }, grid: { color:'#26324f' } },
+    y: { ticks: { color:'#8ea0c4' }, grid: { color:'#26324f' } }
+  }
+};
+
+new Chart(document.getElementById('monthlyChart'), {
+  type:'line',
+  data: {
+    labels:data.monthlyLabels,
+    datasets:[
+      { label:'Sales', data:data.monthlySales, tension:.35 },
+      { label:'Profit', data:data.monthlyProfit, tension:.35 }
+    ]
+  },
+  options:chartOptions
+});
+
+new Chart(document.getElementById('categoryChart'), {
+  type:'bar',
+  data: {
+    labels:data.categoryLabels,
+    datasets:[{ label:'Sales', data:data.categorySales }]
+  },
+  options:chartOptions
+});
+
+new Chart(document.getElementById('regionChart'), {
+  type:'doughnut',
+  data: {
+    labels:data.regionLabels,
+    datasets:[{ label:'Sales', data:data.regionSales }]
+  },
+  options:{ responsive:true, plugins: { legend: { labels: { color:'#dce6ff' } } } }
+});
+</script>
+</body>
+</html>
